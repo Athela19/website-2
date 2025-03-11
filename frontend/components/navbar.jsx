@@ -48,7 +48,7 @@ export default function Navbar() {
 
             {/* Menu - Mobile */}
             <div className={`md:hidden transition-all duration-300 ${isOpen ? "block" : "hidden"}`}>
-                <ul className="flex flex-col items-center gap-4 bg-white py-4 border-t border-black">
+                <ul className="flex flex-col items-center gap-4 bg-white py-4 border-t border-black mt-4">
                     <li className="hover:text-blue-500 transition-colors duration-300">
                         <Link href="/" onClick={() => setIsOpen(false)}>list-1</Link>
                     </li>
