@@ -20,7 +20,7 @@ const connectDB = async () => {
 };
 connectDB();
 
-app.use(cors({ credentials: true, origin: "http://localhost:3000" }));
+app.use(cors({ credentials: true, origin: ["http://192.168.133.68:3000","http://localhost:3000"] }));
 app.use(express.json());
 app.use(cookieParser());
 
