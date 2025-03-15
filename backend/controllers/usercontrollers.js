@@ -17,8 +17,7 @@ export const register = async (req, res) => {
         }
 
         // Hash password
-        const salt = await bcrypt.genSalt();
-        const hashedPassword = await bcrypt.hash(password, salt);
+        const hashedPassword = await bcrypt.hash(password, 10);
 
         // Simpan user baru
         const user = await Users.create({ name, email, password: hashedPassword });
@@ -46,53 +45,16 @@ export const login = async (req, res) => {
         }
 
         // Buat token JWT
-        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "1d" });
 
         // Simpan token di cookie
         res.cookie("token", token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            maxAge: 3600000, // 1 jam
+            maxAge: 24 * 60 * 60 * 1000, // 1 hari
         });
 
         res.json({ message: "Login successful", userId: user.id });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-};
-
-// **GET ALL USERS (PROTECTED)**
-export const getUser = async (req, res) => {
-    try {
-        const users = await Users.findAll();
-        res.json(users);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-};
-
-// **GET USER BY ID (PROTECTED)**
-export const getUserById = async (req, res) => {
-    try {
-        const user = await Users.findByPk(req.params.id);
-        if (!user) {
-            return res.status(404).json({ error: "User not found" });
-        }
-        res.json(user);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-};
-
-// **DELETE USER (PROTECTED)**
-export const deleteUser = async (req, res) => {
-    try {
-        const user = await Users.findByPk(req.params.id);
-        if (!user) {
-            return res.status(404).json({ error: "User not found" });
-        }
-        await user.destroy();
-        res.json({ message: "User deleted successfully" });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -102,4 +64,62 @@ export const deleteUser = async (req, res) => {
 export const logout = (req, res) => {
     res.clearCookie("token");
     res.json({ message: "Logout successful" });
+};
+
+// **GET ALL USERS (PROTECTED)**
+export const getUser = async (req, res) => {
+    try {
+        const users = await Users.findAll({ attributes: ["id", "name", "email"] });
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// **GET USER BY ID (PROTECTED)**
+export const getUserById = async (req, res) => {
+    try {
+        const user = await Users.findByPk(req.params.id, { attributes: ["id", "name", "email"] });
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// **UPDATE USER PROFILE (PROTECTED)**
+export const updateUser = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { name, email } = req.body;
+
+        const user = await Users.findByPk(userId);
+        if (!user) return res.status(404).json({ error: "User not found" });
+
+        user.name = name || user.name;
+        user.email = email || user.email;
+        await user.save();
+
+        res.json({ message: "Profile updated successfully", user });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// **DELETE USER (PROTECTED)**
+export const deleteUser = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const user = await Users.findByPk(userId);
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+        await user.destroy();
+        res.clearCookie("token");
+        res.json({ message: "User deleted successfully" });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 };

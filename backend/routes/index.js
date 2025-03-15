@@ -5,7 +5,7 @@ import { uploadVideo, getVideos, getVideoById, deleteVideo } from '../controller
 
 const router = express.Router();
 
-router.post('/video/upload', uploadVideo);
+router.post('/video/upload',VerifyToken,uploadVideo,);
 router.get('/video', getVideos);
 router.get('/video/:id', getVideoById);
 router.delete('/video/:id', deleteVideo);
