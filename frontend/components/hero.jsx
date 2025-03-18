@@ -1,111 +1,61 @@
 'use client';
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
-export default function Hero() {
+export default function Home() {
   const [videos, setVideos] = useState([]);
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [file, setFile] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchVideos();
   }, []);
 
   const fetchVideos = () => {
-    fetch("http://192.168.133.68:5000/video")
-      .then(res => res.json())
-      .then(data => setVideos(data))
-      .catch(err => console.error("Fetch error:", err));
+    fetch("http://localhost:5000/video")
+      .then((res) => res.json())
+      .then((data) => {
+        setVideos(data);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        console.error("Fetch error:", err);
+        setError("Gagal memuat video. Silakan coba lagi.");
+        setIsLoading(false);
+      });
   };
 
-  const handleUpload = async (e) => {
-    e.preventDefault();
-  
-    if (!title || !file) {
-      alert("Judul dan video wajib diisi!");
-      return;
-    }
-  
-    const formData = new FormData();
-    formData.append("title", title);
-    formData.append("description", description);
-    formData.append("video", file);
-  
-    setLoading(true);
-  
-    try {
-      const res = await fetch("http://192.168.133.68:5000/video/upload", {
-        method: "POST",
-        body: formData,
-        credentials: "include", // Pastikan cookie dikirim
-      });
-  
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Gagal mengunggah video");
-      }
-  
-      const data = await res.json();
-      alert("Video berhasil diunggah!");
-      setVideos([data.video, ...videos]);
-      setTitle("");
-      setDescription("");
-      setFile(null);
-    } catch (error) {
-      console.error("Upload error:", error);
-      alert(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  
+  if (isLoading) {
+    return <p>Memuat video...</p>;
+  }
+
+  if (error) {
+    return <p>{error}</p>;
+  }
 
   return (
-    <div>
+    <div style={{ padding: "20px" }}>
       <h1>Daftar Video</h1>
-
-      {/* Form Upload Video */}
-      <form onSubmit={handleUpload} style={{ marginBottom: "20px" , marginTop:"7rem"}}>
-        <input
-          type="text"
-          placeholder="Judul Video"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
-        />
-        <textarea
-          placeholder="Deskripsi Video"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        ></textarea>
-        <input
-          type="file"
-          accept="video/*"
-          onChange={(e) => setFile(e.target.files[0])}
-          required
-        />
-        <button type="submit" disabled={loading}>
-          {loading ? "Mengunggah..." : "Unggah Video"}
-        </button>
-      </form>
-
-      {/* Menampilkan Daftar Video */}
       {videos.length === 0 ? (
         <p>Belum ada video</p>
       ) : (
-        videos.map((video) => (
-          <div key={video.id}>
-            <h2>{video.title}</h2>
-            <video width="320" height="240" controls>
-              <source src={video.url} type="video/mp4" />
-              Browser Anda tidak mendukung pemutaran video.
-            </video>
-            <p>{video.description}</p>
-          </div>
-        ))
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "20px" }}>
+          {videos.map((video) => (
+            <div key={video.id} style={{ width: "320px" }}>
+              <Link href={`/Video/${video.id}`}>
+                <div style={{ cursor: "pointer" }}>
+                  <img
+                    src={video.thumbnail} // Pastikan data video memiliki properti `thumbnail`
+                    alt={`Thumbnail for ${video.title}`}
+                    style={{ width: "100%", height: "180px", objectFit: "cover", borderRadius: "8px" }}
+                  />
+                  <h2 style={{ marginTop: "10px" }}>{video.title}</h2>
+                </div>
+              </Link>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
